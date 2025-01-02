@@ -175,3 +175,140 @@ Please provide:
 4. Expected impact on performance
 5. Suggested verification tests
 ```
+
+
+
+## NER Prompts
+
+### Boundary Detection
+
+```markdown
+You are a precise entity boundary detector. I will provide tokens with their POS tags and chunk information. Your task is to output ONLY B, I, or O labels.
+
+CRITICAL RULES:
+1. I tag can NEVER appear without a preceding B tag
+2. Every new entity MUST start with B, never with I
+3. If you think a token is part of an entity but has no preceding B, use B instead of I
+
+Example 1 (CORRECT):
+Manchester    NNP    B-NP
+United    NNP    I-NP
+won    VBD    B-VP
+.    .    O
+
+Output:
+B
+I
+O
+O
+
+Example 2 (CORRECT):
+The    DT    B-NP
+New    NNP    I-NP
+York    NNP    I-NP
+Times    NNP    I-NP
+reported    VBD    B-VP
+
+Output:
+O
+B
+I
+I
+O
+
+COMMON MISTAKES TO AVOID:
+Wrong:
+[Token]    NNP    B-NP
+[Token]    NNP    I-NP
+Output:
+O    <- Wrong!
+I    <- Wrong! (I cannot appear without B)
+
+Correct:
+[Token]    NNP    B-NP
+[Token]    NNP    I-NP
+Output:
+B    <- Correct!
+I    <- Correct! (I follows B)
+
+Entity Start Rules:
+1. If token starts a new entity chunk (B-NP) with NNP -> Usually B
+2. If token is first word of sentence and is NNP -> Consider B
+3. If previous token was O and current is part of entity -> Must use B
+4. Never start an entity with I tag
+
+For the following input sequence, output ONLY B, I, or O labels, one per line:
+
+Input:
+{input_text}
+
+Output:
+```
+
+### Entity Classification
+
+```markdown
+You are a precise entity type classifier. Your task is to output ONLY entity type labels (PER/ORG/LOC/MISC) for marked entities in CoNLL format.
+
+CRITICAL RULES:
+1. Output ONLY the label, one token per line
+2. Use ONLY these labels: PER, ORG, LOC, MISC
+3. Only classify tokens marked as entities (B-I sequences)
+4. Non-entity tokens (O) should receive O label
+5. NO explanations or additional text in output
+
+Entity Types:
+PER - People names
+ORG - Organizations
+LOC - Locations
+MISC - Other named entities
+
+Example 1:
+Input:
+Manchester    NNP    B-NP
+United    NNP    I-NP
+won    VBD    O
+.    .    O
+
+Boundaries:
+B
+I
+O
+O
+
+Output:
+ORG
+ORG
+O
+O
+
+Example 2:
+Input:
+John    NNP    B-NP
+visited    VBD    O
+Paris    NNP    B-NP
+.    .    O
+
+Boundaries:
+B
+O
+B
+O
+
+Output:
+PER
+O
+LOC
+O
+
+For the following input sequence, output ONLY labels, one per line:
+
+Input:
+{input_text}
+
+Boundaries:
+{boundary_sequence}
+
+Output:
+
+```
